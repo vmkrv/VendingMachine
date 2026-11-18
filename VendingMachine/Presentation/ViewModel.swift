@@ -8,35 +8,41 @@
 import Foundation
 
 @Observable
+@MainActor
 class ViewModel {
-    private var buyer: Buyer
+    private let buyer: Buyer
 
     var buyMessage = " "
     var buyerBalance: Int = 0
     var existingProducts: [Product] = []
     var cartProducts: [Product] = []
 
-    init() {
+    init(buyer: Buyer) {
         self.buyMessage = " "
-        let balance = 150
-        self.buyer = Buyer(balance: balance)
-        self.buyerBalance = balance
-        self.existingProducts = buyer.listAllCurrentProducts()
+        self.buyer = buyer
+        Task {
+            self.buyerBalance = await buyer.getBalance()
+            self.existingProducts = await buyer.listAllCurrentProducts()
+        }
     }
 
     func buyProduct(_ product: Product) {
-        let result = buyer.buySnack(name: product.name)
-        buyMessage = result.purchaseMessage
-        existingProducts = result.existingProducts
-        buyerBalance = result.buyerBalance
-        cartProducts = result.cartProducts
+        Task {
+            let result = await buyer.buySnack(name: product.name)
+            buyMessage = result.purchaseMessage
+            existingProducts = result.existingProducts
+            buyerBalance = result.buyerBalance
+            cartProducts = result.cartProducts
+        }
     }
 
     func returnProduct(_ product: Product) {
-        let result = buyer.returnSnack(name: product.name)
-        buyMessage = result.purchaseMessage
-        existingProducts = result.existingProducts
-        buyerBalance = result.buyerBalance
-        cartProducts = result.cartProducts
+        Task {
+            let result = await buyer.returnSnack(name: product.name)
+            buyMessage = result.purchaseMessage
+            existingProducts = result.existingProducts
+            buyerBalance = result.buyerBalance
+            cartProducts = result.cartProducts
+        }
     }
 }

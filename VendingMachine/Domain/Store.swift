@@ -11,11 +11,15 @@ class Store {
         case failure(String)
     }
 
-    private var vendingMachine = VendingMachine()
+    private let vendingMachine: VendingMachine
 
-    func getSnack(name: String, balance: inout Int) -> Result {
+    init(vendingMachine: VendingMachine) {
+        self.vendingMachine = vendingMachine
+    }
+
+    func getSnack(name: String, balance: Int) async -> Result {
         do {
-            let product = try vendingMachine.getProduct(name: name, balance: &balance)
+            let product = try await vendingMachine.getProduct(name: name, balance: balance)
             return .success(product, nil)
         } catch VendingError.invalidSelection {
             return .failure(VendingError.invalidSelection.description)
@@ -30,16 +34,16 @@ class Store {
         }
     }
 
-    func returnSnack(name: String, balance: inout Int) -> Result {
+    func returnSnack(name: String, balance: Int) async -> Result {
         do {
-            let product = try vendingMachine.returnProduct(name: name, balance: &balance)
+            let product = try await vendingMachine.returnProduct(name: name, balance: balance)
             return .success(product, "Вы вернули \(product.name)")
         } catch  {
             return .failure(VendingError.invalidSelection.description)
         }
     }
 
-    func listAllCurrentProducts() -> [Product] {
-        vendingMachine.listAllCurrentProducts()
+    func listAllCurrentProducts() async -> [Product] {
+        await vendingMachine.listAllCurrentProducts()
     }
 }

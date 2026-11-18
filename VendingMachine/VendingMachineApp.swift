@@ -11,7 +11,7 @@ import SwiftUI
 struct VendingMachineApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            ContentView(viewModel: ModuleConfigurator.configureViewModel(with: 150))
         }
     }
 }

@@ -5,22 +5,23 @@
 //  Created by Makarov Vyacheslav on 15.11.2026.
 //
 
-class Buyer {
-    private var store = Store()
+actor Buyer {
+    private let store: Store
     private var myBalance: Int
     private var purchasedItems = [Product]()
 
-    init(store: Store = Store(), balance: Int) {
+    init(store: Store, balance: Int) {
         self.store = store
         self.myBalance = balance
     }
 
-    func buySnack(name: String) -> Buyer.ReturnParams {
-        let result = store.getSnack(name: name, balance: &myBalance)
+    func buySnack(name: String) async -> Buyer.ReturnParams {
+        let result = await store.getSnack(name: name, balance: myBalance)
         let purchaseMessage: String
         switch result {
         case let .success(product, _):
-            addProductToCart(product)
+            await addProductToCart(product)
+            myBalance -= product.price
             purchaseMessage = "Вы купили \(product.name)"
         case let .failure(message):
             purchaseMessage = "К сожалению \(message)"
@@ -28,27 +29,28 @@ class Buyer {
         return Buyer.ReturnParams(
             purchaseMessage: purchaseMessage,
             buyerBalance: myBalance,
-            existingProducts: store.listAllCurrentProducts(),
+            existingProducts: await store.listAllCurrentProducts(),
             cartProducts: purchasedItems
         )
     }
 
-    func returnSnack(name: String) -> Buyer.ReturnParams {
+    func returnSnack(name: String) async -> Buyer.ReturnParams {
         guard
             purchasedItems.map(\.name).contains(name)
         else {
             return Buyer.ReturnParams(
                 purchaseMessage: "Вы не можете вернуть товар который ещё не купили",
                 buyerBalance: myBalance,
-                existingProducts: store.listAllCurrentProducts(),
+                existingProducts: await store.listAllCurrentProducts(),
                 cartProducts: purchasedItems
             )
         }
-        let result = store.returnSnack(name: name, balance: &myBalance)
+        let result = await store.returnSnack(name: name, balance: myBalance)
         let purchaseMessage: String
         switch result {
         case let .success(product, message):
             removeProductFromCart(product)
+            myBalance += product.price
             purchaseMessage = message ?? ""
         case let .failure(message):
             purchaseMessage = "К сожалению \(message)"
@@ -56,21 +58,25 @@ class Buyer {
         return Buyer.ReturnParams(
             purchaseMessage: purchaseMessage,
             buyerBalance: myBalance,
-            existingProducts: store.listAllCurrentProducts(),
+            existingProducts: await store.listAllCurrentProducts(),
             cartProducts: purchasedItems
         )
     }
 
-    func listAllCurrentProducts() -> [Product] {
-        store.listAllCurrentProducts()
+    func listAllCurrentProducts() async -> [Product] {
+        await store.listAllCurrentProducts()
     }
 
-    private func addProductToCart(_ product: Product) {
+    func getBalance() async -> Int {
+        myBalance
+    }
+
+    private func addProductToCart(_ product: Product) async {
         guard
             let index = purchasedItems.firstIndex(where: { $0.name == product.name })
         else {
             // нет продуктов этого типа
-            purchasedItems.append(product.initWithInitialQuantityOne())
+            await purchasedItems.append(product.initWithInitialQuantityOne())
             return
         }
         var existingProduct = purchasedItems[index]

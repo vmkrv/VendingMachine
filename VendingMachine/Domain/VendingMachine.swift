@@ -12,7 +12,7 @@ class VendingMachine {
         Product(name: "Конфета", price: 10, count: 3)
     ]
 
-    func getProduct(name: String, balance: inout Int) throws -> Product {
+    func getProduct(name: String, balance: Int) async throws -> Product {
         guard
             let index = products.firstIndex(where: { $0.name == name })
         else {
@@ -37,8 +37,6 @@ class VendingMachine {
             throw VendingError.insuficientFunds(amount: product.price - balance)
         }
 
-        balance -= product.price
-
         var newItem = product
         newItem.count -= 1
         products[index] = newItem
@@ -46,14 +44,13 @@ class VendingMachine {
         return newItem
     }
 
-    func returnProduct(name: String, balance: inout Int) throws -> Product  {
+    func returnProduct(name: String, balance: Int) async throws -> Product  {
         guard
             let index = products.firstIndex(where: { $0.name == name })
         else {
             throw VendingError.invalidSelection
         }
         let product = products[index]
-        balance += product.price
 
         var newItem = product
         newItem.count += 1
@@ -62,7 +59,7 @@ class VendingMachine {
         return product
     }
 
-    func listAllCurrentProducts() -> [Product] {
+    func listAllCurrentProducts() async -> [Product] {
         products
     }
 }
